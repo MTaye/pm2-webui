@@ -17,11 +17,11 @@ const loginRateLimiter = RateLimit.middleware({
   });
 
 router.get('/', async (ctx) => {
-    return ctx.redirect('/login')
+    return ctx.redirect(config.BASEURL + '/login')
 })
 
 router.get('/login', loginRateLimiter, checkAuthentication, async (ctx) => {
-    return await ctx.render('auth/login', {layout : false, login: { username: '', password:'', error: null }})
+    return await ctx.render('auth/login', {layout : false, login: { username: '', password:'', error: null }, config: { BASEURL: config.BASEURL }})
 })
 
 router.post('/login', loginRateLimiter, checkAuthentication, async (ctx) => {
@@ -29,23 +29,23 @@ router.post('/login', loginRateLimiter, checkAuthentication, async (ctx) => {
     try {
         await validateAdminUser(username, password)
         ctx.session.isAuthenticated = true;
-        return ctx.redirect('/apps')
+        return ctx.redirect(config.BASEURL + '/apps')
     }
     catch(err){
-        return await ctx.render('auth/login', {layout : false, login: { username, password, error: err.message }})
+        return await ctx.render('auth/login', {layout : false, login: { username, password, error: err.message }, config: { BASEURL: config.BASEURL }})
     }
 })
 
 router.get('/apps', isAuthenticated, async (ctx) => {
     const apps =  await listApps()
     return await ctx.render('apps/dashboard', {
-      apps
+      apps, config: {BASEURL: config.BASEURL}
     });
 });
 
 router.get('/logout', (ctx)=>{
     ctx.session = null;
-    return ctx.redirect('/login')
+    return ctx.redirect(config.BASEURL + '/login')
 })
 
 router.get('/apps/:appName', isAuthenticated, async (ctx) => {
@@ -68,10 +68,11 @@ router.get('/apps/:appName', isAuthenticated, async (ctx) => {
             logs: {
                 stdout,
                 stderr
-            }
+            },
+            config: {BASEURL: config.BASEURL}
         });
     }
-    return ctx.redirect('/apps')
+    return ctx.redirect(config.BASEURL + '/apps')
 });
 
 router.get('/api/apps/:appName/logs/:logType', isAuthenticated, async (ctx) => {
